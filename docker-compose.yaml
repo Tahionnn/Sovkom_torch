@@ -93,7 +93,10 @@ services:
       - backend
 
   goapp:
-    build: API/
+    build: 
+      context: ./API
+      dockerfile: Dockerfile 
+      target: production-stage
     container_name: goapp
     restart: always
     depends_on:

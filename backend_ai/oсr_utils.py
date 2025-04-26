@@ -3,7 +3,6 @@ import numpy as np
 import easyocr
 from typing import Union, List, Optional, Tuple, Dict, Any
 from skimage.filters import threshold_local
-import json
 import aiohttp
 
 
@@ -28,13 +27,16 @@ def otsu_scanner(image: np.ndarray) -> Tuple[int, np.ndarray]:
     return thresh_val, binary_image
 
 
+filters = [lambda x: x, bw_scanner, otsu_scanner]
+reader = easyocr.Reader(["ru"], gpu=False)
+
+
 def ocr(
     image: Union[str, np.ndarray],
     workers: int = 2,
-    gpu: bool = True,
     text_threshold: float = 0.8,
 ) -> List[str]:
-    reader = easyocr.Reader(["ru"], gpu=gpu)
+    global reader
 
     if isinstance(image, str):
         image = cv2.imread(image)

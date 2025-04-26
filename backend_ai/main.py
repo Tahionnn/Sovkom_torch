@@ -3,7 +3,8 @@ import cv2
 from fastapi import FastAPI, File
 import numpy as np
 
-from .features import get_client_feature
+from oсr_utils import ocr
+from features import get_client_feature
 from models.multivae import model
 
 
@@ -19,13 +20,13 @@ def recomend_cashbacks(client_id: int):
     return model(feature)
 
 
-@app.get("/ocr")
+@app.post("/ocr")
 def ocr_image(
     image: Annotated[bytes, File()],
 ):
     nparr = np.fromstring(image, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-    return img.shape
+    return ocr(img, workers=1)
 
 
 @app.get("/train")

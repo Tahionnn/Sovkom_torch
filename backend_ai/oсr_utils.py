@@ -20,7 +20,7 @@ def bw_scanner(image: np.ndarray) -> np.ndarray:
     return (gray > T).astype("uint8") * 255
 
 
-def otsu_scanner(image_path: str) -> Tuple[int, np.ndarray]:
+def otsu_scanner(image: np.ndarray) -> Tuple[int, np.ndarray]:
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     thresh_val, binary_image = cv2.threshold(
         image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU

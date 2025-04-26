@@ -1,7 +1,8 @@
 import numpy as np
 import torch
-#import onnx
-#import onnxruntime
+
+# import onnx
+# import onnxruntime
 
 
 class MultiVAEONNX:
@@ -10,7 +11,9 @@ class MultiVAEONNX:
         self.input_name = self.sess.get_inputs()[0].name
 
     def predict(self, feature):
-        return self.sess.run(None, {self.input_name: feature})[0]
+        preds = self.sess.run(None, {self.input_name: feature})[0]
+        return np.argpartition(preds, -self.k)[-self.k :].tolist()
+
 
 class MultiVAETorch:
     def __init__(self, path, k=5):
@@ -20,7 +23,8 @@ class MultiVAETorch:
     def __call__(self, feature):
         with torch.no_grad():
             preds = self.model(torch.FloatTensor(feature))
-        return np.argpartition(preds, -self.k)[-self.k:].tolist()
+        return np.argpartition(preds, -self.k)[-self.k :].tolist()
 
 
 model = MultiVAETorch("models\\multivae.pt")
+# model = MultiVAEONNX("models\\multivae.onnx")

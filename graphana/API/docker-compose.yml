@@ -1,0 +1,27 @@
+services:
+  db:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: data123
+      POSTGRES_DB: halvaBank
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DB_HOST: localhost  # Используем localhost для доступа с хоста
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:

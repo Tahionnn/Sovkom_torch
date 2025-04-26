@@ -1,0 +1,320 @@
+basePath: /
+definitions:
+  handlers.AuthInput:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для WEB приложения анализа трат
+  title: HalvaStats
+  version: "1.0"
+paths:
+  /analytics/month:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает сумму расходов по категориям за текущий месяц для авторизованного
+        пользователя и все чеки за месяц
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат анализа за месяц
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Ежемесячная аналитика расходов
+      tags:
+      - analytics
+  /analytics/receipt:
+    get:
+      consumes:
+      - application/json
+      description: Анализирует JSON чека и возвращает разбивку по категориям товаров
+        и чек в формате JSON
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат анализа чека
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Ошибка при обработке чека
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Аналитика по конкретному чеку
+      tags:
+      - analytics
+  /analytics/week:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает сумму расходов по категориям за текущую неделю для авторизованного
+        пользователя и все чеки за неделю
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат анализа за неделю
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Еженедельная аналитика расходов
+      tags:
+      - analytics
+  /analytics/year:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает сумму расходов по категориям за текущий год для авторизованного
+        пользователя и все чеки за год
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат анализа за год
+          schema:
+            items:
+              additionalProperties:
+                type: string
+              type: object
+            type: array
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Ежегодная аналитика расходов
+      tags:
+      - analytics
+  /login/:
+    post:
+      consumes:
+      - application/json
+      description: Авторизует пользователя и возвращает JWT токен с username в payload
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AuthInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Токен успешно создан
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ввод
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неверный логин или пароль
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при создании токена
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Логин пользователя
+      tags:
+      - auth
+  /receipts:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех чеков для текущего авторизованного пользователя
+        и данные на Dashboard.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Получить список всех чеков пользователя и аналитику по ним
+      tags:
+      - receipts
+  /registration/:
+    post:
+      consumes:
+      - application/json
+      description: Регистрирует нового пользователя, хэшируя пароль и сохраняя в БД
+      parameters:
+      - description: Данные для регистрации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AuthInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Пользователь успешно зарегистрирован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный ввод или пользователь уже существует
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера при создании пользователя
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Регистрация нового пользователя
+      tags:
+      - auth
+  /test/:
+    get:
+      consumes:
+      - application/json
+      description: Этот маршрут используется для проверки работоспособности сервера,
+        доступен только с валидным JWT токеном.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Сообщение об успешной проверке
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Неавторизованный доступ
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Тестовый маршрут
+      tags:
+      - test
+  /testdata/:
+    get:
+      consumes:
+      - application/json
+      description: Этот хендлер создает несколько тестовых чеков и их категории для
+        пользователя, который отправил запрос
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Чеки успешно добавлены
+        "400":
+          description: Неверный запрос
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Добавить несколько тестовых чеков в базу данных
+      tags:
+      - test
+swagger: "2.0"

@@ -2,6 +2,7 @@ from typing import Annotated
 import cv2
 from fastapi import BackgroundTasks, FastAPI, File
 import numpy as np
+import logging
 
 from app.oсr_utils import (
     opencv_resize_maxcap,
@@ -11,6 +12,15 @@ from app.oсr_utils import (
 from app.features import get_client_feature
 from app.models.multivae import model
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - client_id=%(client_id)s - offer=%(offer_id)s - cashback=%(cashback).2f - model=%(model_version)s",
+    handlers=[
+        logging.FileHandler("/tmp/log/recommendations.log"),
+        logging.StreamHandler(),
+    ],
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -45,7 +55,19 @@ def recomend_cashbacks(client_username: str):
     if model is None:
         raise Exception()
     feature = get_client_feature(client_username)
-    return model(feature)
+    recommendations = model(feature)
+
+    for cashback in recommendations:
+        logger.info(
+            "Cashback recommendation",
+            extra={
+                "client_username": client_username,
+                "cashback": cashback,
+                "model_version": "1.0",
+            },
+        )
+
+    return recommendations
 
 
 @app.post("/ocr")

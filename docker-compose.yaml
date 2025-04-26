@@ -19,7 +19,8 @@ services:
     volumes:
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./promtail:/etc/promtail
+      #- ./promtail:/etc/promtail
+      - ./promtail-config.yml:/etc/promtail/config.yml
     command: -config.file=/etc/promtail/promtail-config.yaml
     networks:
       - monitoring

@@ -5,7 +5,7 @@ import numpy as np
 
 from app.oсr_utils import ocr
 from app.features import get_client_feature
-from models.multivae import model
+from app.models.multivae import model
 
 
 app = FastAPI()

@@ -3,8 +3,8 @@ import cv2
 from fastapi import FastAPI, File
 import numpy as np
 
-from oсr_utils import ocr
-from features import get_client_feature
+from app.oсr_utils import ocr
+from app.features import get_client_feature
 from models.multivae import model
 
 

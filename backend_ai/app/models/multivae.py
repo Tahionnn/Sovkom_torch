@@ -5,8 +5,8 @@ import numpy as np
 import torch
 import os
 
-# import onnx
-# import onnxruntime as rt
+import onnx
+import onnxruntime as rt
 
 
 class MultiVAEONNX:

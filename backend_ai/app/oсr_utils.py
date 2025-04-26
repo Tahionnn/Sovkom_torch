@@ -4,9 +4,19 @@ import easyocr
 from typing import Union, List, Optional, Tuple, Dict, Any
 from skimage.filters import threshold_local
 import aiohttp
+import json
 
 
-def opencv_resize(image: np.ndarray, ratio: float) -> np.ndarray:
+def opencv_resize_ratio(image: np.ndarray, ratio: float) -> np.ndarray:
+    width = int(image.shape[1] * ratio)
+    height = int(image.shape[0] * ratio)
+    dim = (width, height)
+    return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+
+
+def opencv_resize_maxcap(image: np.ndarray, max_cap: int = 300) -> np.ndarray:
+    max_size = max(image.shape[1], image.shape[0])
+    ratio = max_cap / max_size
     width = int(image.shape[1] * ratio)
     height = int(image.shape[0] * ratio)
     dim = (width, height)
@@ -32,38 +42,45 @@ reader = easyocr.Reader(["ru"], gpu=False)
 
 
 def ocr(
-    image: Union[str, np.ndarray],
+    image: np.ndarray,
     workers: int = 2,
     text_threshold: float = 0.8,
 ) -> List[str]:
     global reader
-
-    if isinstance(image, str):
-        image = cv2.imread(image)
-
-    result = reader.readtext(
+    return reader.readtext(
         image, detail=0, text_threshold=text_threshold, workers=workers
     )
-    return result
 
 
-async def send_to_llm(
-    text: str, json_format: str, api_key: str, session: aiohttp.ClientSession
-) -> Dict[str, Any]:
-    prompt = f"""Ты помогаешь составлять json-файлы с содержимым чека из магазина. На вход тебе постпает сырой OCR-текст. Извлеки список покупок, их цены и итоговую цену из чека
-    Входные данные: 
-    {text}
+async def send_to_llm(text: str, json_format: str, api_key: str) -> Dict[str, Any]:
+    async with aiohttp.ClientSession() as session:
+        prompt = f"""Ты помогаешь составлять json-файлы с содержимым чека из магазина. На вход тебе постпает сырой OCR-текст. Извлеки список покупок, их цены и итоговую цену из чека
+        Входные данные: 
+        {text}
 
-    Проанализируй текст и верни только валидный JSON в следующем формате:
-    {json_format}
-    """
+        Проанализируй текст и верни только валидный JSON в следующем формате:
+        {json_format}
+        """
 
-    async with session.post(
-        "https://api.mistral.ai/v1/chat/completions",
-        headers={"Authorization": f"Bearer {api_key}"},
-        json={
-            "model": "mistral-small",
-            "messages": [{"role": "user", "content": prompt}],
-        },
-    ) as response:
-        return await response.json()
+        async with session.post(
+            "https://api.mistral.ai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}"},
+            json={
+                "model": "mistral-small",
+                "messages": [{"role": "user", "content": prompt}],
+            },
+        ) as response:
+            return await response.json()
+
+
+def parse_json_garbage(s: str) -> dict[str, Any]:
+    s = s.replace("'", '"')
+    s = s[next(idx for idx, c in enumerate(s) if c in "{[") :]
+    try:
+        return json.loads(s)
+    except json.JSONDecodeError as e:
+        try:
+            return json.loads(s[: e.pos])
+        except Exception as e:
+            print(s)
+            raise e

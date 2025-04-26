@@ -2,17 +2,17 @@ import numpy as np
 import torch
 import os
 
-import onnx
-import onnxruntime as rt
+# import onnx
+# import onnxruntime as rt
 
 
 class MultiVAEONNX:
-    def __init__(self, path: str = None,  k: int = 5):
+    def __init__(self, path: str = None, k: int = 5):
         if path is None:
             current_dir = os.path.dirname(os.path.abspath(__file__))
             path = os.path.join(current_dir, "models", "multivae.onnx")
-    
-        self.session  = rt.InferenceSession(path, providers=rt.get_available_providers())
+
+        self.session = rt.InferenceSession(path, providers=rt.get_available_providers())
         self.input_name = self.session.get_inputs()[0].name
         self.k = k
 
@@ -32,5 +32,5 @@ class MultiVAETorch:
         return np.argpartition(preds, -self.k)[-self.k :].tolist()
 
 
-#model = MultiVAETorch("models\\multivae.pt")
-model = MultiVAEONNX()
+model = MultiVAETorch("app\\models\\multivae.pt")
+# model = MultiVAEONNX()

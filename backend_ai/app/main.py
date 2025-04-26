@@ -4,12 +4,9 @@ from fastapi import BackgroundTasks, FastAPI, File
 import numpy as np
 
 from app.oсr_utils import (
-    ocr,
     opencv_resize_maxcap,
-    filters,
     parse_json_garbage,
     send_to_llm,
-    bw_scanner
 )
 from app.features import get_client_feature
 from app.models.multivae import model
@@ -43,11 +40,11 @@ async def ocr_background(img: np.ndarray):
 
 
 @app.get("/predict")
-def recomend_cashbacks(client_id: int):
+def recomend_cashbacks(client_username: str):
     global model
     if model is None:
         raise Exception()
-    feature = get_client_feature(client_id)
+    feature = get_client_feature(client_username)
     return model(feature)
 
 

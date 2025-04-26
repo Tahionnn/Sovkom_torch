@@ -42,5 +42,5 @@ class MultiVAETorch:
 
 
 mlflow.set_tracking_uri("http://localhost:5000")
-# model = MultiVAETorch(model_uri="models:/multivae-torch/1")
-model = MultiVAEONNX(model_uri="models:/multivae/1")
+model = MultiVAETorch(model_uri="models:/multivae-torch/1")
+#model = MultiVAEONNX(model_uri="models:/multivae/1")

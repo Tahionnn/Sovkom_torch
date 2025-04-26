@@ -9,6 +9,7 @@ from app.oсr_utils import (
     filters,
     parse_json_garbage,
     send_to_llm,
+    bw_scanner
 )
 from app.features import get_client_feature
 from app.models.multivae import model
@@ -18,12 +19,8 @@ app = FastAPI()
 
 
 async def ocr_background(img: np.ndarray):
-    print("start background ocr")
-    results = [f(img) for f in filters]
-    results = [" ".join(ocr(img)) for x in results]
-    results = "\n".join(results)
     response = await send_to_llm(
-        results,
+        img,
         """{
   "shop": "Название магазина",
   "items": [
@@ -36,7 +33,7 @@ async def ocr_background(img: np.ndarray):
     }
   ]
 }""",
-        "api_key",
+        "6c3t8lc5ske6tIraZDakla91bZZMZ6Hf",
     )
     if "choices" in response:
         json_result = parse_json_garbage(response["choices"][0]["message"]["content"])

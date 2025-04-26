@@ -1,10 +1,13 @@
 import cv2
+import io
 import numpy as np
+from PIL import Image
 import easyocr
 from typing import Union, List, Optional, Tuple, Dict, Any
 from skimage.filters import threshold_local
 import aiohttp
 import json
+import base64
 
 
 def opencv_resize_ratio(image: np.ndarray, ratio: float) -> np.ndarray:
@@ -38,13 +41,13 @@ def otsu_scanner(image: np.ndarray) -> Tuple[int, np.ndarray]:
 
 
 filters = [lambda x: x, bw_scanner, otsu_scanner]
-reader = easyocr.Reader(["ru"], gpu=False)
+reader = easyocr.Reader(["ru"], gpu=True)
 
 
 def ocr(
     image: np.ndarray,
     workers: int = 2,
-    text_threshold: float = 0.8,
+    text_threshold: float = 0.6,
 ) -> List[str]:
     global reader
     return reader.readtext(
@@ -52,24 +55,50 @@ def ocr(
     )
 
 
-async def send_to_llm(text: str, json_format: str, api_key: str) -> Dict[str, Any]:
+async def send_to_llm(
+    image_np: np.ndarray,
+    prompt_text: str,
+    api_key: str,
+    model: str = "mistral-small-latest"
+) -> dict:
+    if image_np.dtype != np.uint8:
+        image_np = image_np.astype(np.uint8)
+    
+    if image_np.shape[2] == 3:
+        image_pil = Image.fromarray(image_np[..., ::-1]) 
+    else:
+        image_pil = Image.fromarray(image_np)
+    
+    buffer = io.BytesIO()
+    image_pil.save(buffer, format="JPEG", quality=90)
+    base64_str = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt_text},
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_str}"
+                    }
+                }
+            ]
+        }
+    ]
+    
     async with aiohttp.ClientSession() as session:
-        prompt = f"""Ты помогаешь составлять json-файлы с содержимым чека из магазина. На вход тебе постпает сырой OCR-текст. Извлеки список покупок, их цены и итоговую цену из чека
-        Входные данные: 
-        {text}
-
-        Проанализируй текст и верни только валидный JSON в следующем формате:
-        {json_format}
-        """
-
         async with session.post(
             "https://api.mistral.ai/v1/chat/completions",
             headers={"Authorization": f"Bearer {api_key}"},
             json={
-                "model": "mistral-small",
-                "messages": [{"role": "user", "content": prompt}],
-            },
+                "model": model,
+                "messages": messages,
+                "response_format": {"type": "json_object"}
+            }
         ) as response:
+            response.raise_for_status()
             return await response.json()
 
 

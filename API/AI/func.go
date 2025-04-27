@@ -3,7 +3,6 @@ package AI
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/coalaura/mistral"
 	"log"
 	"strings"
@@ -87,8 +86,6 @@ func FindCategories(client *mistral.MistralClient, jsonFile string) ([]DataForGr
 		log.Printf("Ошибка ответа Mistral AI: %s", err)
 		return nil, err
 	}
-
-	fmt.Println(response.Choices[0].Message.Content)
 
 	result, err := CleanAndParseJSON(response.Choices[0].Message.Content)
 	if err != nil {

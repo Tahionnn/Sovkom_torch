@@ -1,11 +1,16 @@
 from typing import Annotated
-import cv2
 from fastapi import BackgroundTasks, FastAPI, File
+import cv2
 import numpy as np
 import logging
 
+from app.oсr_utils import (
+    opencv_resize_maxcap,
+    parse_json_garbage,
+    send_to_llm,
+)
+from app.features.features import get_client_feature
 from app.oсr_utils import send_to_llm, parse_json_garbage
-from app.features import get_client_feature
 from app.models.multivae import model
 
 logging.basicConfig(

@@ -186,7 +186,7 @@ paths:
       summary: Логин пользователя
       tags:
       - auth
-  /receipts:
+  /receipts/:
     get:
       consumes:
       - application/json
@@ -217,6 +217,109 @@ paths:
       summary: Получить список всех чеков пользователя и аналитику по ним
       tags:
       - receipts
+  /receipts/{uuid}:
+    put:
+      consumes:
+      - application/json
+      description: Обновляет информацию о чеке (название, дату, JSON-данные) и помечает
+        IsJSONReady=true
+      parameters:
+      - description: UUID чека
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: Данные для обновления
+        in: body
+        name: input
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешно обновленный чек
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверные входные данные
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Чек не принадлежит пользователю или уже готов
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Чек не найден
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Обновить данные чека
+      tags:
+      - Чеки
+  /receipts/empty/:
+    get:
+      consumes:
+      - application/json
+      description: Создает новый чек с IsJSONReady=false и пустым JSONCheck
+      parameters:
+      - description: Данные для создания чека
+        in: body
+        name: input
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Успешно создан пустой чек
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Неверные входные данные
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Пользователь не авторизован
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Ошибка при создании чека
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Создать пустой чек
+      tags:
+      - Чеки
   /registration/:
     post:
       consumes:

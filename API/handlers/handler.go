@@ -6,6 +6,7 @@ import (
 	"HacatonSovKomBank/pkg/jwtutils"
 	"HacatonSovKomBank/pkg/postgreSQL"
 	"encoding/json"
+	"errors"
 	"github.com/coalaura/mistral"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -20,10 +21,12 @@ const (
 	loginURL               = "/login/"
 	registerURL            = "/registration/"
 	listResForUsernameURL  = "/receipts/"
-	analyticsForReceiptURL = "/receipt/{uuid}"
+	analyticsForReceiptURL = "/receipt/:uuid"
 	analyticsWeekURL       = "/analytics/week/"
 	analyticsMonthURL      = "/analytics/month/"
 	analyticsYearURL       = "/analytics/year/"
+	emptyReceiptURL        = "/receipts/empty/"
+	updateReceiptURL       = "/receipts/{uuid}"
 )
 
 type handler struct {
@@ -53,10 +56,11 @@ func (h *handler) Register(router *gin.Engine) {
 		public.POST(registerURL, h.registration)
 		public.POST(loginURL, h.login)
 
-		// TODO Создание пустого чека с флос значением
+		// Создание пустого чека с флос значением
+		public.GET(emptyReceiptURL, h.emptyReceipt)
 
-		// TODO Изменение контента
-
+		// Изменение контента
+		public.PUT(updateReceiptURL, h.updateReceipt)
 	}
 
 	// Защищённые маршруты (с JWT)
@@ -222,7 +226,7 @@ func (h *handler) test(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "OK"
 // @Failure 401 {object} map[string]string "Пользователь не авторизован"
 // @Failure 500 {object} map[string]string "Ошибка сервера"
-// @Router /receipts [get]
+// @Router /receipts/ [get]
 func (h *handler) listResForUsername(c *gin.Context) {
 	// Достаём username из контекста
 	usernameInterface, exists := c.Get("username")
@@ -387,9 +391,9 @@ func (h *handler) analyticsWeek(c *gin.Context) {
 	}
 
 	// Массив чеков для ответа
-	var receiptsData []datatypes.JSON
+	var receiptsData []postgreSQL.Receipt
 	for _, receipt := range receipts {
-		receiptsData = append(receiptsData, receipt.JSONCheck)
+		receiptsData = append(receiptsData, receipt)
 	}
 
 	// Собираем UUID всех чеков для дальнейшего поиска категорий
@@ -548,7 +552,7 @@ func (h *handler) analyticsMonth(c *gin.Context) {
 
 	// Возвращаем данные
 	c.JSON(200, gin.H{
-		"receipts":  receiptsData,
+		"receipts":  receipts,
 		"analytics": categoryResult,
 	})
 }
@@ -653,7 +657,7 @@ func (h *handler) analyticsYear(c *gin.Context) {
 
 	// Возвращаем данные
 	c.JSON(200, gin.H{
-		"receipts":  receiptsData,
+		"receipts":  receipts,
 		"analytics": categoryResult,
 	})
 }
@@ -817,4 +821,118 @@ func (h *handler) AddTestReceiptsHandler(c *gin.Context) {
 
 	// Отправляем успешный ответ
 	c.JSON(http.StatusOK, gin.H{"message": "Чеки успешно добавлены"})
+}
+
+// @Summary Создать пустой чек
+// @Description Создает новый чек с IsJSONReady=false и пустым JSONCheck
+// @Tags Чеки
+// @Security ApiKeyAuth
+// @Accept  json
+// @Produce  json
+// @Param   input body     map[string]string false "Данные для создания чека"
+// @Success 201 {object} map[string]string "Успешно создан пустой чек"
+// @Failure 400 {object} map[string]string "Неверные входные данные"
+// @Failure 401 {object} map[string]string "Пользователь не авторизован"
+// @Failure 500 {object} map[string]string "Ошибка при создании чека"
+// @Router /receipts/empty/ [get]
+func (h *handler) emptyReceipt(c *gin.Context) {
+	// Получаем имя пользователя из контекста (предполагаем, что оно там есть)
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// Создаем новый пустой чек
+	newReceipt := postgreSQL.Receipt{
+		Username:    username.(string),   // Приводим интерфейс к строке
+		UUID:        uuid.New().String(), // Генерируем новый UUID
+		Name:        "Новый чек",
+		Date:        time.Now(),
+		JSONCheck:   []byte("{}"), // Пустой JSON
+		IsJSONReady: false,
+	}
+
+	// Сохраняем в базу данных
+	if err := h.db.Create(&newReceipt).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create receipt", "details": err.Error()})
+		return
+	}
+
+	// Возвращаем успешный ответ с созданным чеком
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Empty receipt created successfully",
+		"receipt": newReceipt,
+	})
+}
+
+// @Summary Обновить данные чека
+// @Description Обновляет информацию о чеке (название, дату, JSON-данные) и помечает IsJSONReady=true
+// @Tags Чеки
+// @Security ApiKeyAuth
+// @Accept  json
+// @Produce  json
+// @Param   uuid path     string true "UUID чека"
+// @Param   input body    map[string]string true "Данные для обновления"
+// @Success 200 {object} map[string]string "Успешно обновленный чек"
+// @Failure 400 {object} map[string]string "Неверные входные данные"
+// @Failure 403 {object} map[string]string "Чек не принадлежит пользователю или уже готов"
+// @Failure 404 {object} map[string]string "Чек не найден"
+// @Failure 500 {object} map[string]string "Ошибка сервера"
+// @Router /receipts/{uuid} [put]
+func (h *handler) updateReceipt(c *gin.Context) {
+	// 1. Получаем UUID из URL и username из контекста
+	uuid := c.Param("uuid")
+	username, exists := c.Get("username")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	// 2. Проверяем существование чека и принадлежность пользователю
+	var existingReceipt postgreSQL.Receipt
+	if err := h.db.Where("uuid = ? AND username = ?", uuid, username.(string)).First(&existingReceipt).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "receipt not found or access denied"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "database error"})
+		return
+	}
+
+	// 3. Проверяем, что чек еще не готов (IsJSONReady == false)
+	if existingReceipt.IsJSONReady {
+		c.JSON(http.StatusForbidden, gin.H{"error": "cannot modify ready receipt"})
+		return
+	}
+
+	// 4. Парсим входные данные
+	var req UpdateReceiptRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 5. Обновляем чек
+	updates := postgreSQL.Receipt{
+		Name:        req.Name,
+		Date:        req.Date,
+		JSONCheck:   req.JSONCheck,
+		IsJSONReady: true, // Помечаем как готовый после обновления
+	}
+
+	if err := h.db.Model(&existingReceipt).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to update receipt"})
+		return
+	}
+
+	// 6. Возвращаем обновленный чек
+	c.JSON(http.StatusOK, existingReceipt)
+}
+
+// UpdateReceiptRequest - структура для обновления чека
+type UpdateReceiptRequest struct {
+	Name      string         `json:"name" binding:"required"`
+	Date      time.Time      `json:"date" binding:"required"`
+	JSONCheck datatypes.JSON `json:"json_check" binding:"required"`
 }

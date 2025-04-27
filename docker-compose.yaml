@@ -92,17 +92,17 @@ services:
     networks:
       - backend-network
 
-  #frontend:
-  #  build:
-  #    context: ./frontend
-  #    dockerfile: Dockerfile
-  #    target: production
-  #  ports:
-  #    - "80:80"
-  #  depends_on:
-  #    - db
-  #    - goapp
-  #    - ml
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "81:81"
+    depends_on:
+      - db
+      - goapp
+      - ml
 
 volumes:
   loki_data:

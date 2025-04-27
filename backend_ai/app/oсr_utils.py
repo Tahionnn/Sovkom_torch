@@ -5,6 +5,7 @@ from typing import Any
 import aiohttp
 import json
 import base64
+from PIL import Image
 
 
 def opencv_resize_maxcap(image: np.ndarray, max_cap: int = 300) -> np.ndarray:

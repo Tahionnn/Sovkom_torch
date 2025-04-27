@@ -7,7 +7,7 @@ class CheckApi {
   async getInfo(id: string) {
     try {
       const res = await axios.get(
-        createUrl(apies.data.baseHost, [apies.data.checkInfo,id]),
+        createUrl(apies.data.demoHost, [apies.data.checkInfo]),
         {
           headers: {
             Authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -15,7 +15,8 @@ class CheckApi {
         }
       );
       const colors = createColors();
-      const data = res.data.map((v: any, i: number) => {
+      DataStore.setCheckList(res.data[0]['list']['gt_parse'])
+      const data = res.data[0]["analytics"].map((v: any, i: number) => {
         v['color'] = colors[i];
         return v;
       });
@@ -29,7 +30,7 @@ class CheckApi {
       const formdata = new FormData();
       formdata.append('file', DataStore.getScan());
       const res = await axios.get(
-        createUrl(apies.data.baseHost, [apies.data.check]),
+        createUrl(apies.data.demoHost, [apies.data.check]),
         {
           headers: {
             Authorization: 'Bearer ' + localStorage.getItem('token'),
@@ -49,7 +50,7 @@ class CheckApi {
 
   async sendTrueScan() {
     try {
-      //const res = await axios.post(createUrl(apies.data.baseHost,[]))
+      //const res = await axios.post(createUrl(apies.data.demoHost,[]))
       return true;
     } catch (error) {
       throw error;

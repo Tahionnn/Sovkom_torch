@@ -11,10 +11,10 @@ export const apies = {
     week: 'analytics/week/',
     month: 'analytics/month/',
     year: 'analytics/year/',
-    checkInfo: 'analytics/receipt',
+    checkInfo: 'demoCheck',
     check: 'check',
     sendTrueScan: '',
     recs: 'recs',
-    demohHost:"https://5ac08f1e63fe2200.mokky.dev"
+    demoHost:"https://5ac08f1e63fe2200.mokky.dev"
   },
 };

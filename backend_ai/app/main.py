@@ -10,6 +10,7 @@ from app.oсr_utils import (
     send_to_llm,
 )
 from app.features.features import get_client_feature
+from app.oсr_utils import send_to_llm, parse_json_garbage
 from app.models.multivae import model
 
 logging.basicConfig(

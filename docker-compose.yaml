@@ -58,8 +58,8 @@ services:
     container_name: postgres
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: data123
+      POSTGRES_DB: halvaBank
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
@@ -92,67 +92,27 @@ services:
     networks:
       - backend
 
-  mongodb:
-    image: mongo:6.0
-    container_name: mongodb
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
-    volumes:
-      - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017 --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - backend
-  
-  mlflow-server:
-    image: mlflow/mlflow:latest
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlruns:/mlruns 
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow-server:5000
-      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000 
-    command: >
-      mlflow server
-      --host 0.0.0.0
-      --port 5000
-      --backend-store-uri sqlite:////mlruns/mlflow.db
-      --default-artifact-root s3://mlflow/  # Или file:///mlruns/artifacts
-
-  rabbitmq:
-    image: rabbitmq:4.0.5-management
-    container_name: rabbitmq
-    hostname: rabbitmq
+  goapp:
+    build: 
+      context: ./API
+      dockerfile: Dockerfile 
+      target: production-stage
+    container_name: goapp
     restart: always
+    depends_on:
+      - postgres
     environment:
-      - RABBITMQ_DEFAULT_USER=rmuser
-      - RABBITMQ_DEFAULT_PASS=rmpassword
+      DB_HOST: localhost  
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - "8080:8080"
     networks:
       - backend
-
 
 volumes:
   loki_data:
   prometheus_data:
   grafana_data:
-  mongodb_data:
   postgres_data:
-  rabbitmq_data:
 
 networks:
   backend-network:

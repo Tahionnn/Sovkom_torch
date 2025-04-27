@@ -1,0 +1,3 @@
+from bin_trans_repo import brand_features_view
+
+brand_features_view.get

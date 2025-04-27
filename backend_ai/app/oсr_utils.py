@@ -16,9 +16,6 @@ def opencv_resize_maxcap(image: np.ndarray, max_cap: int = 300) -> np.ndarray:
     return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
 
 
-reader = easyocr.Reader(["ru"], gpu=True)
-
-
 async def send_to_llm(
     image_np: np.ndarray,
     prompt_text: str,

@@ -29,12 +29,9 @@ const Analityc: React.FC<Props> = observer(() => {
       CheckApi.getInfo(params['id']);
     }
   }, []);
+  console.log(DataStore.getCheckList())
   const [open, setOpen] = useState<boolean>(false);
-  useEffect(() => {
-    if (DataStore.getCheckList() === undefined) {
-      navigate(routes.start);
-    }
-  }, [DataStore.getCheckList()]);
+
   return (
     <AnalitycContainer>
       <ScanCheck open={open} setOpen={setOpen} />

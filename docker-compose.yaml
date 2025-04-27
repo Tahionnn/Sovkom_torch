@@ -21,7 +21,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       #- ./promtail:/etc/promtail
       - ./promtail-config.yml:/etc/promtail/config.yml
-    command: -config.file=/etc/promtail/promtail-config.yaml
+    command: -config.file=/etc/promtail/config.yml
     networks:
       - monitoring
     depends_on:
@@ -49,49 +49,33 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - monitoring
-    depends_on:
-      - prometheus
     restart: unless-stopped 
   
-  postgres:
-    image: postgres:latest
+  db:
+    image: postgres:16
     container_name: postgres
+    restart: always
     environment:
-      POSTGRES_USER: admin
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: data123
       POSTGRES_DB: halvaBank
-      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data/pgdata
-    deploy:
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    command: >
-      postgres -c max_connections=1000
-               -c shared_buffers=256MB
-               -c effective_cache_size=768MB
-               -c maintenance_work_mem=64MB
-               -c checkpoint_completion_target=0.7
-               -c wal_buffers=16MB
-               -c default_statistics_target=100
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres_user -d postgres_db" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    restart: unless-stopped
-    tty: true
-    stdin_open: true
+      - pgdata:/var/lib/postgresql/data  
     networks:
-      - backend
+      - backend-network
 
+  ml:
+    build: 
+      context: ./backend_ai/app
+      dockerfile: Dockerfile 
+    container_name: ml
+    restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - backend-network
   goapp:
     build: 
       context: ./API
@@ -100,25 +84,25 @@ services:
     container_name: goapp
     restart: always
     depends_on:
-      - postgres
+      - db
     environment:
       DB_HOST: localhost  
     ports:
       - "8080:8080"
     networks:
-      - backend
+      - backend-network
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: production
-    ports:
-      - "80:80"
-    depends_on:
-      - postgres
-      - goapp
-      - ml
+  #frontend:
+  #  build:
+  #    context: ./frontend
+  #    dockerfile: Dockerfile
+  #    target: production
+  #  ports:
+  #    - "80:80"
+  #  depends_on:
+  #    - db
+  #    - goapp
+  #    - ml
 
 volumes:
   loki_data:

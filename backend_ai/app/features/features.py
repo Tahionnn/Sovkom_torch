@@ -3,8 +3,8 @@ import pandas as pd
 from datetime import datetime
 import numpy as np
 
-brands = pd.read_csv("app/features/brands.csv")
-store = FeatureStore(repo_path="app/features/transactions")
+brands = pd.read_csv("features/brands.csv")
+store = FeatureStore(repo_path="features/transactions/")
 
 
 def get_client_feature(client_username: str):

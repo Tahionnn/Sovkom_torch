@@ -4,20 +4,20 @@ import cv2
 import numpy as np
 import logging
 
-from app.oсr_utils import (
+from oсr_utils import (
     opencv_resize_maxcap,
     parse_json_garbage,
     send_to_llm,
 )
-from app.features.features import get_client_feature
-from app.oсr_utils import send_to_llm, parse_json_garbage
-from app.models.multivae import model
+from features.features import get_client_feature
+from oсr_utils import send_to_llm, parse_json_garbage
+from models.multivae import model
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - client_id=%(client_id)s - offer=%(offer_id)s - cashback=%(cashback).2f - model=%(model_version)s",
     handlers=[
-        logging.FileHandler("/tmp/log/recommendations.log"),
+        logging.FileHandler("tmp/log/recommendations.log"),
         logging.StreamHandler(),
     ],
 )

@@ -12,5 +12,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InN0c
 
 ###
 GET http://localhost:8080/testdata/
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InN0cmluZyIsImV4cCI6MTc0NTc4ODM3Mn0.dcusghUAiIt9vxorbiAK8qj_yCoILrMSrINg3oUSyRE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InN0cmluZyIsImV4cCI6MTc0NTc5Mzk2M30.GrSJx5sc4XatehBMPYFZlYO8EKljpoA_7el3asjuCUQ
 
+###
+GET http://localhost:8080/receipt/ndjvnjdnvjdfnjvndnvdnfv
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InN0cmluZyIsImV4cCI6MTc0NTc5Mzk2M30.GrSJx5sc4XatehBMPYFZlYO8EKljpoA_7el3asjuCUQ
